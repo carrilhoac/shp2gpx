@@ -1,6 +1,15 @@
-SHP2GPX tool
 
-Conversion of ESRI Shapefiles containing point geometry to GPX file format
+shp2gpx
+-------
 
+Conversion of ESRI Shapefiles containing point geometry (SHP TYPE 1) 
+to GPX file format (GPS exchange format), a XML description of the data.
 
 Contact: andrecarrilho@ste-simemp.com.br
+
+
+Libraries
+---------
+
+https://github.com/OSGeo/shapelib
+https://github.com/Taywee/args
