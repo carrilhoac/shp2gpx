@@ -1,22 +1,26 @@
-PROJECT( SHP2GPX )
+project( shp2gpx )
 
-CMAKE_MINIMUM_REQUIRED( VERSION 3.16.0 )
+cmake_minimum_required( VERSION 3.16.0 )
 
-INCLUDE_DIRECTORIES( "." ".." )
+include_directories( "." ".." )
 
-SET( SOURCES shp2gpx.cpp )
+set( SOURCES shp2gpx.cpp )
+add_executable( shp2gpx ${SOURCES} )
 
-IF( UNIX )
+if( WIN32 )
 
-  INCLUDE_DIRECTORIES( "/usr/include" "/usr/local/include" )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14" )
+  include_directories("${PROJECT_SOURCE_DIR}/lib/shapelib/include")
+  target_link_libraries( shp2gpx ${PROJECT_SOURCE_DIR}/lib/shapelib/lib/libshp.dll.a )
 
-ENDIF( UNIX )
+endif( WIN32 )
 
-FIND_LIBRARY( SHAPELIB shp REQUIRED )
+if( UNIX )
 
-ADD_EXECUTABLE( shp2gpx ${SOURCES} )
+  include_directories( "/usr/include" "/usr/local/include" )
+  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14" )
 
-TARGET_LINK_LIBRARIES( shp2gpx ${SHAPELIB} )
+  find_library( SHAPELIB shp REQUIRED )
+  target_link_libraries( shp2gpx ${SHAPELIB} )
 
-INSTALL( TARGETS shp2gpx DESTINATION bin )
+endif( UNIX )
+

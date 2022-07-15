@@ -19,8 +19,8 @@
 #include <vector>
 #include <sstream>
 
-#include "shapelib/shapefil.h"
-#include "args.hxx"
+#include <shapefil.h>
+#include "lib/args.hxx"
 
 struct GPXPoint {
     double          _lat;
