@@ -21,6 +21,8 @@ if( UNIX )
 
   find_library( SHAPELIB shp REQUIRED )
   target_link_libraries( shp2gpx ${SHAPELIB} )
+  
+  install( TARGETS shp2gpx DESTINATION bin )
 
 endif( UNIX )
 
