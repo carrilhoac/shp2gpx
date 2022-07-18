@@ -6,10 +6,13 @@
 //
 // Autor    Andre Caceres Carrilho
 // Contato  andrecarrilho@ste-simemp.com.br
-// Data     08 jun 2022
-// Fix1     30 jun 2022
+// Data     08 jun 2022  created
+// Fix1     30 jun 2022  fix bouding box computation
+// Fix2     18 jul 2022  fix multiple segfault errors
 //
 /////////////////////////////////////////////////////////////////////
+
+#include <sys/stat.h>
 
 #include <iomanip>
 #include <iostream>
@@ -22,12 +25,28 @@
 #include <shapefil.h>
 #include "lib/args.hxx"
 
+//#define _DEBUG 1
+//#define _VERBOSE 1
+
+#ifdef _VERBOSE
+    #define SHP2GPX_MSG(x)      std::cout << x << std::endl;
+#else
+    #define SHP2GPX_MSG(x)
+#endif
+
+// https://stackoverflow.com/questions/12774207
+bool FileExists(const std::string s_filename)  {
+    struct stat buffer;
+    return (stat (s_filename.c_str(), &buffer) == 0 );
+}
+
+
 struct GPXPoint {
     double          _lat;
     double          _lon;
     std::string     _name;
 
-#if _DEBUG
+#ifdef _DEBUG
     void Print() {
         std::cout
             << "\t" << _name
@@ -57,7 +76,7 @@ private:
         int     _width;
         int     _decimals;
 
-#if _DEBUG
+#ifdef _DEBUG
         void Print() {
             std::cout << "\t" << _szname << "\t"
                 << _width << "\t" << _decimals << std::endl;
@@ -87,7 +106,17 @@ public:
         _dbf_handle = DBFOpen(pszShapeFile, "rb");
         if (!_dbf_handle)
             {   return false; }
+#ifdef _DEBUG
+        _DebugShpHandle(_shp_handle);
+        _DebugDbfHandle(_dbf_handle);
+#endif
+        if(_shp_handle->nShapeType != SHPT_POINT) {
+            SHP2GPX_MSG("Invalid Shapefile geometry type. Must be point.")
+            _Close();
+            return false;
+        }
         if (_shp_handle->nRecords != _dbf_handle->nRecords) {
+            SHP2GPX_MSG("Different record count between SHP and DBF files.")
             _Close();
             return false;
         }
@@ -98,7 +127,10 @@ public:
         std::vector<GPXPoint> dat;
         dat.reserve(_dbf_handle->nRecords);
 
+        // Case Insensitive
         int fieldIndex = DBFGetFieldIndex( _dbf_handle, "nome");
+        if (fieldIndex < 0)
+            { fieldIndex = DBFGetFieldIndex( _dbf_handle, "name"); }
 
         for (int i = 0; i < _dbf_handle->nRecords; ++i ) {
             GPXPoint current;
@@ -107,11 +139,20 @@ public:
             current._lat = iObj->padfY[0];
             current._lon = iObj->padfX[0];
 
+            #if defined (_DEBUG) && defined(_VERBOSE)
+                #if _VERBOSE > 1
+                _DebugShpObject(iObj);
+                #endif
+            #endif
+
             SHPDestroyObject(iObj);
 
-            current._name = DBFReadStringAttribute( _dbf_handle,
-                i, fieldIndex);
-
+            if (fieldIndex >= 0 ) {
+                current._name = DBFReadStringAttribute( _dbf_handle,
+                    i, fieldIndex);
+            } else {
+                current._name = std::to_string(i+1);
+            }
             dat.push_back(current);
         }
 
@@ -125,7 +166,7 @@ private:
         if (_dbf_handle)
             {   DBFClose(_dbf_handle); }
     }
-#if _DEBUG
+#ifdef _DEBUG
     static void _DebugShpObject ( SHPObject * _obj ) {
         std::cout << std::fixed;
         std::cout << std::setprecision(7);
@@ -142,11 +183,11 @@ private:
     static void _DebugShpHandle ( SHPHandle _hnd ) {
         std::cout << "SHP Type: " << _hnd->nShapeType << std::endl;
         std::cout << "SHP file size: " << _hnd->nFileSize << " bytes" << std::endl;
-        std::cout << "Num Records: " << _hnd->nRecords << std::endl;
+        std::cout << "SHP Num Records: " << _hnd->nRecords << std::endl;
     }
     static void _DebugDbfHandle ( DBFHandle _hnd ) {
-        std::cout << "Num Records: " << _hnd->nRecords << std::endl;
-        std::cout << "Num Fields: " << _hnd->nFields << std::endl;
+        std::cout << "DBF Num Records: " << _hnd->nRecords << std::endl;
+        std::cout << "DBF Num Fields: " << _hnd->nFields << std::endl;
     }
 #endif
 };
@@ -228,7 +269,7 @@ public:
         }
         catch (args::Help) {
             std::cout << parser;
-            return 0;
+            return 1;
         }
         catch (args::ParseError e) {
             std::cerr << e.what() << std::endl;
@@ -264,6 +305,15 @@ void RunFile(const std::string& f_in, const std::string& f_out) {
 
     Shapefile m_shape;
 
+    if (!FileExists(f_in + ".shp" )) {
+        SHP2GPX_MSG("SHP file does not exist in this directory. Check filename.")
+        return;
+    }
+    if (!FileExists(f_in + ".dbf" )) {
+        SHP2GPX_MSG("DBF file does not exist in this directory. Check filename.")
+        return;
+    }
+
     m_shape.Open(f_in.c_str());
 
     std::vector<GPXPoint> dat = m_shape.GetData();
@@ -279,9 +329,9 @@ int main(int argc, char **argv)
     if (io_args.Parse(argc, argv))
         return 1;
 
-#if _DEBUG
-    std::cout << io_args.f_shp << std::endl;
-    std::cout << io_args.f_gpx << std::endl;
+#ifdef _DEBUG
+    std::cout << "SHP file: " << io_args.f_shp << std::endl;
+    std::cout << "GPX file: " << io_args.f_gpx << std::endl;
 #endif
 
     RunFile(io_args.f_shp, io_args.f_gpx);
