@@ -23,7 +23,7 @@
 #include <sstream>
 
 #include <shapefil.h>
-#include "lib/args.hxx"
+#include <args.hxx>
 
 //#define _DEBUG 1
 //#define _VERBOSE 1
