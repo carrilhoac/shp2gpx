@@ -11,6 +11,7 @@ if( WIN32 )
 
   include_directories("${PROJECT_SOURCE_DIR}/lib/shapelib/include")
   target_link_libraries( shp2gpx ${PROJECT_SOURCE_DIR}/lib/shapelib/lib/libshp.dll.a )
+  install( TARGETS shp2gpx DESTINATION "C:/Program Files/bin" )
 
 endif( WIN32 )
 
