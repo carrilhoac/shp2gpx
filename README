@@ -7,6 +7,8 @@ to GPX file format (GPS exchange format), a XML description of the data.
 
 Contact: andrecarrilho@ste-simemp.com.br
 
+Note: If available, this tool will use a "name" column to label the 
+points in the GPX file. Otherwise, they will be labeled by their ID.
 
 Libraries
 ---------
